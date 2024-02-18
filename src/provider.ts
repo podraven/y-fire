@@ -92,15 +92,15 @@ export class FireProvider extends Observable<any> {
 
   init = async () => {
     this.trackData(); // initiate this before creating instance, so that users with read permissions can also view the document
-    const data = await initiateInstance(this.db, this.documentPath);
-    if (!data.success) {
-      this.kill(true); // destroy provider but keep the read-only stream alive
-    } else {
+    try {
+      const data = await initiateInstance(this.db, this.documentPath);
       this.instanceConnection.on("closed", this.trackConnections);
       this.uid = data.uid;
       this.timeOffset = data.offset;
       this.initiateHandler();
       addEventListener("beforeunload", this.destroy); // destroy instance on window close
+    } catch (error) {
+      this.kill(true); // destroy provider but keep the read-only stream alive
     }
   };
 
@@ -256,7 +256,7 @@ export class FireProvider extends Observable<any> {
   }: {
     from: unknown;
     message: unknown;
-    data: unknown;
+    data: Uint8Array | null;
   }) => {
     if (this.peersRTC) {
       if (this.peersRTC.receivers) {
@@ -370,7 +370,14 @@ export class FireProvider extends Observable<any> {
     }
   };
 
-  awarenessUpdateHandler = ({ added, updated, removed }, origin: unknown) => {
+  awarenessUpdateHandler = (
+    {
+      added,
+      updated,
+      removed,
+    }: { added: number[]; updated: number[]; removed: number[] },
+    origin: unknown
+  ) => {
     const changedClients = added.concat(updated).concat(removed);
     this.sendDataToPeers({
       from: origin !== "local" ? origin : this.uid,

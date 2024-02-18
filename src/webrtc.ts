@@ -6,17 +6,14 @@ import {
   doc,
   onSnapshot,
   Firestore,
-  addDoc,
   setDoc,
   deleteDoc,
-  collection,
-  runTransaction,
   Unsubscribe,
   DocumentData,
   DocumentReference,
 } from "@firebase/firestore";
-import { Observable } from "lib0/observable";
-import Peer from "simple-peer-light";
+import { ObservableV2 as Observable } from "lib0/observable";
+import SimplePeer from "simple-peer-light";
 import {
   Uint8ArrayToBase64,
   base64ToUint8Array,
@@ -46,9 +43,9 @@ export class WebRtc extends Observable<any> {
   awareness: awarenessProtocol.Awareness;
   instanceConnection: Observable<any>;
   readonly documentPath: string;
-  uid: string | null = null;
-  peerUid: string | null = null;
-  peer: Peer.Instance;
+  uid: string;
+  peerUid: string;
+  peer: SimplePeer.Instance;
   readonly db: Firestore;
   private unsubscribeHandshake?: Unsubscribe;
   isCaller: boolean;
@@ -128,14 +125,14 @@ export class WebRtc extends Observable<any> {
   };
 
   callPeer = () => {
-    this.peer = new Peer({
+    this.peer = new SimplePeer({
       initiator: true,
       config: this.ice,
       trickle: false,
       channelName: `${this.documentPath}:${this.uid}_${this.peerUid}`,
     });
 
-    this.peer.on("signal", async (signal) => {
+    this.peer.on("signal", async (signal: unknown) => {
       /**
        * Write signal to ./instances/{peerUid}/calls/{uid}
        */
@@ -158,13 +155,13 @@ export class WebRtc extends Observable<any> {
   };
 
   replyPeer = () => {
-    this.peer = new Peer({
+    this.peer = new SimplePeer({
       initiator: false,
       config: this.ice,
       trickle: false,
     });
 
-    this.peer.on("signal", async (signal) => {
+    this.peer.on("signal", async (signal: unknown) => {
       /**
        * Write signal to ./instances/{peerUid}
        */
@@ -214,7 +211,7 @@ export class WebRtc extends Observable<any> {
     }
   };
 
-  connect = (signal: Peer.SignalData) => {
+  connect = (signal: SimplePeer.SignalData) => {
     try {
       this.unsubHandshake(); // we already have a handshake, stop further handshakes
       if (this.peer) this.peer.signal(signal);
@@ -259,7 +256,13 @@ export class WebRtc extends Observable<any> {
     this.destroy();
   };
 
-  sendData = async ({ message, data }) => {
+  sendData = async ({
+    message,
+    data,
+  }: {
+    message: unknown;
+    data: Uint8Array | null;
+  }) => {
     const msg: Object = {};
     msg.uid = this.uid;
     if (message) msg.message = message;

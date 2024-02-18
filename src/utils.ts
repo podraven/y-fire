@@ -51,10 +51,9 @@ export const initiateInstance = async (db: Firestore, path: string) => {
       Math.floor(serverTime.nanoseconds / 1000000) -
       avg;
 
-    return { success: true, uid, offset };
+    return { uid, offset };
   } catch (error) {
-    // console.log(path, "Initiating instance error", error);
-    return { success: false };
+    throw error;
   }
 };
 
@@ -101,10 +100,10 @@ export const deleteInstance = async (
       });
       transaction.delete(ref);
     });
-    return { success: true };
+    // return { success: true };
   } catch (error) {
     // console.log(path, "Delete instance error:", error);
-    return { success: false, error };
+    // return { success: false, error };
   }
 };
 
@@ -129,15 +128,15 @@ export const killZombie = async (
       // by its peer
       deleteInstance(db, path, peerUid);
     }
-    return {
-      success: true,
-    };
+    // return {
+    //   success: true,
+    // };
   } catch (error) {
     // console.log("Kill zombie error:", error);
-    return {
-      success: false,
-      error,
-    };
+    // return {
+    //   success: false,
+    //   error,
+    // };
   }
 };
 
