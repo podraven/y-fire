@@ -1,0 +1,35 @@
+{
+  "name": "y-fire",
+  "version": "1.0.0",
+  "description": "A firebase (firestore) provider for Yjs",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/podraven/y-fire.git"
+  },
+  "keywords": [
+    "y-fire",
+    "yjs",
+    "firestore"
+  ],
+  "author": "podraven",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/podraven/y-fire/issues"
+  },
+  "homepage": "https://github.com/podraven/y-fire#readme",
+  "devDependencies": {
+    "@types/simple-peer": "^9.11.8",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "firebase": "^10.8.0",
+    "simple-peer-light": "^9.10.0",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.12"
+  }
+}
