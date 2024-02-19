@@ -27,8 +27,10 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "simple-peer-light": "^9.10.0"
+  },
+  "peerDependencies": {
     "firebase": "^10.8.0",
-    "simple-peer-light": "^9.10.0",
     "y-protocols": "^1.0.6",
     "yjs": "^13.6.12"
   }
