@@ -10,7 +10,7 @@ import {
 } from "@firebase/firestore";
 import { collection } from "firebase/firestore";
 import * as Y from "yjs";
-import { ObservableV2 as Observable } from "lib0/observable";
+import { ObservableV2 } from "lib0/observable";
 import * as awarenessProtocol from "y-protocols/awareness";
 import { deleteInstance, initiateInstance, refreshPeers } from "./utils";
 import { WebRtc } from "./webrtc";
@@ -44,7 +44,7 @@ interface PeersRTC {
  * @param maxWaitTime maximum miliseconds to wait before sending updates to peers
  * @param maxWaitFirestoreTime miliseconds to wait before syncing this client's update to firestore
  */
-export class FireProvider extends Observable<any> {
+export class FireProvider extends ObservableV2<any> {
   readonly doc: Y.Doc;
   awareness: awarenessProtocol.Awareness;
   readonly documentPath: string;
@@ -72,7 +72,7 @@ export class FireProvider extends Observable<any> {
 
   firebaseDataLastUpdatedAt: number = new Date().getTime();
 
-  instanceConnection: Observable<any> = new Observable();
+  instanceConnection: ObservableV2<any> = new ObservableV2();
   recreateTimeout: string | number | NodeJS.Timeout;
 
   private unsubscribeData?: Unsubscribe;

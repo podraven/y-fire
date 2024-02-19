@@ -12,7 +12,7 @@ import {
   DocumentData,
   DocumentReference,
 } from "@firebase/firestore";
-import { ObservableV2 as Observable } from "lib0/observable";
+import { ObservableV2 } from "lib0/observable";
 import SimplePeer from "simple-peer-light";
 import {
   Uint8ArrayToBase64,
@@ -27,7 +27,7 @@ interface Parameters {
   firebaseApp: FirebaseApp;
   ydoc: Y.Doc;
   awareness: awarenessProtocol.Awareness;
-  instanceConnection: Observable<any>;
+  instanceConnection: ObservableV2<any>;
   documentPath: string;
   uid: string;
   peerUid: string;
@@ -38,10 +38,10 @@ interface Object {
   [key: string]: any;
 }
 
-export class WebRtc extends Observable<any> {
+export class WebRtc extends ObservableV2<any> {
   readonly doc: Y.Doc;
   awareness: awarenessProtocol.Awareness;
-  instanceConnection: Observable<any>;
+  instanceConnection: ObservableV2<any>;
   readonly documentPath: string;
   uid: string;
   peerUid: string;
@@ -313,12 +313,12 @@ export class WebRtc extends Observable<any> {
     this.consoleHandler("Error", error);
   };
 
-  destroy = async () => {
+  async destroy() {
     // this.consoleHandler("destroyed");
     if (this.clock) clearTimeout(this.clock);
     if (this.peer) this.peer.destroy();
     this.unsubHandshake();
     this.deleteSignals(); // Delete calls and answers
     super.destroy();
-  };
+  }
 }
