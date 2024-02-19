@@ -16,7 +16,7 @@ import { deleteInstance, initiateInstance, refreshPeers } from "./utils";
 import { WebRtc } from "./webrtc";
 import { createGraph } from "./graph";
 
-interface Parameters {
+export interface Parameters {
   firebaseApp: FirebaseApp;
   ydoc: Y.Doc;
   path: string;
