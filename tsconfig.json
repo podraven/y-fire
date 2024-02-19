@@ -1,17 +1,16 @@
 {
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"],
   "compilerOptions": {
-    "outDir": "./dist", 
-    "allowJs": true,
-    "skipLibCheck": true,
+    "allowJs": false,
+    // Generate d.ts files
+    "declaration": true,
+    "emitDeclarationOnly": false,
+    "outDir": "dist",
+    "declarationMap": true,
     "strict": false,
-    "forceConsistentCasingInFileNames": true,
-    "noEmit": true,
-    "incremental": true,
     "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
+    "moduleResolution":"Node",
+    "target": "ES6"
   },
-  "exclude": ["node_modules"]
 }

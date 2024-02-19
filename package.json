@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "A firebase (firestore) provider for Yjs",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
   "scripts": {
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -28,5 +31,10 @@
   },
   "dependencies": {
     "simple-peer-light": "^9.10.0"
+  },
+  "peerDependencies": {
+    "firebase": "^10.7.1",
+    "yjs": "^13.6.12",
+    "y-protocols": "^1.0.6"
   }
 }
