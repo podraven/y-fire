@@ -2,7 +2,7 @@
   "name": "y-fire",
   "version": "1.0.0",
   "description": "A firebase (firestore) provider for Yjs",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -13,7 +13,8 @@
   "keywords": [
     "y-fire",
     "yjs",
-    "firestore"
+    "firestore",
+    "crdt"
   ],
   "author": "podraven",
   "license": "MIT",
@@ -23,7 +24,6 @@
   "homepage": "https://github.com/podraven/y-fire#readme",
   "devDependencies": {
     "@types/simple-peer": "^9.11.8",
-    "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   },
   "dependencies": {
