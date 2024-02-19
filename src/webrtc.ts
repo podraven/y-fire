@@ -108,9 +108,11 @@ export class WebRtc extends Observable<any> {
      * connected to a zombie peer. Thus we will attempt to
      * kill the zombie instance
      */
+    if (this.clock) clearTimeout(this.clock);
     this.clock = setTimeout(() => {
       if (this.connection !== "connected") {
         killZombie(this.db, this.documentPath, this.uid, this.peerUid);
+        if (this.peer) this.peer.destroy();
       }
     }, 30 * 1000);
   };
@@ -300,8 +302,8 @@ export class WebRtc extends Observable<any> {
     console.log(
       "WebRTC",
       this.documentPath,
-      this.uid,
-      this.peerUid,
+      `this client: ${this.uid}`,
+      `peer client: ${this.peerUid}`,
       message,
       data
     );
@@ -312,11 +314,9 @@ export class WebRtc extends Observable<any> {
   };
 
   destroy = async () => {
-    this.consoleHandler(`Closing connect ${this.uid} -> ${this.peerUid}`);
+    // this.consoleHandler("destroyed");
     if (this.clock) clearTimeout(this.clock);
-    if (this.peer) {
-      this.peer.destroy();
-    }
+    if (this.peer) this.peer.destroy();
     this.unsubHandshake();
     this.deleteSignals(); // Delete calls and answers
     super.destroy();

@@ -10,7 +10,7 @@ import {
 } from "@firebase/firestore";
 import { collection } from "firebase/firestore";
 import * as Y from "yjs";
-import { Observable } from "lib0/observable";
+import { ObservableV2 as Observable } from "lib0/observable";
 import * as awarenessProtocol from "y-protocols/awareness";
 import { deleteInstance, initiateInstance, refreshPeers } from "./utils";
 import { WebRtc } from "./webrtc";
@@ -100,6 +100,7 @@ export class FireProvider extends Observable<any> {
       this.initiateHandler();
       addEventListener("beforeunload", this.destroy); // destroy instance on window close
     } catch (error) {
+      this.consoleHandler("Could not connect to a peer network.");
       this.kill(true); // destroy provider but keep the read-only stream alive
     }
   };
@@ -183,7 +184,7 @@ export class FireProvider extends Observable<any> {
   reconnect = () => {
     if (this.recreateTimeout) clearTimeout(this.recreateTimeout);
     this.recreateTimeout = setTimeout(async () => {
-      this.consoleHandler("re-connect");
+      this.consoleHandler("triggering reconnect");
       this.destroy();
       this.init();
     }, 200);
@@ -287,9 +288,10 @@ export class FireProvider extends Observable<any> {
         { content: Bytes.fromUint8Array(Y.encodeStateAsUpdate(this.doc)) },
         { merge: true }
       );
-      this.consoleHandler("saved to firestore");
     } catch (error) {
-      this.consoleHandler("save to firestore error", error);
+      this.consoleHandler("error saving to firestore", error);
+    } finally {
+      if (this.onSaving) this.onSaving(false);
     }
   };
 
@@ -302,13 +304,7 @@ export class FireProvider extends Observable<any> {
         new Date().getTime() - this.firebaseDataLastUpdatedAt >
         this.maxFirestoreWait
       ) {
-        try {
-          this.saveToFirestore();
-        } catch (error) {
-          this.consoleHandler("save to firestore error", error);
-        } finally {
-          if (this.onSaving) this.onSaving(false);
-        }
+        this.saveToFirestore();
       } else {
         // A peer recently saved to firebase, let's wait a bit
         this.sendToFirestoreQueue();
@@ -390,7 +386,13 @@ export class FireProvider extends Observable<any> {
   };
 
   consoleHandler = (message: any, data: any = null) => {
-    console.log("Provider:", this.documentPath, this.uid, message, data);
+    console.log(
+      "Provider:",
+      this.documentPath,
+      `this client: ${this.uid}`,
+      message,
+      data
+    );
   };
 
   // use destroy directly if you don't need arguements
