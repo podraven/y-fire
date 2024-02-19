@@ -1,27 +1,3 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -31,16 +7,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.FireProvider = void 0;
-const firestore_1 = require("@firebase/firestore");
-const firestore_2 = require("firebase/firestore");
-const Y = __importStar(require("yjs"));
-const observable_1 = require("lib0/observable");
-const awarenessProtocol = __importStar(require("y-protocols/awareness"));
-const utils_1 = require("./utils");
-const webrtc_1 = require("./webrtc");
-const graph_1 = require("./graph");
+import { getFirestore, onSnapshot, doc, setDoc, Bytes, } from "@firebase/firestore";
+import { collection } from "firebase/firestore";
+import * as Y from "yjs";
+import { ObservableV2 } from "lib0/observable";
+import * as awarenessProtocol from "y-protocols/awareness";
+import { deleteInstance, initiateInstance, refreshPeers } from "./utils";
+import { WebRtc } from "./webrtc";
+import { createGraph } from "./graph";
 /**
  * FireProvider class that handles firestore data sync and awareness
  * based on webRTC.
@@ -51,7 +25,7 @@ const graph_1 = require("./graph");
  * @param maxWaitTime maximum miliseconds to wait before sending updates to peers
  * @param maxWaitFirestoreTime miliseconds to wait before syncing this client's update to firestore
  */
-class FireProvider extends observable_1.ObservableV2 {
+export class FireProvider extends ObservableV2 {
     get clientTimeOffset() {
         return this.timeOffset;
     }
@@ -70,12 +44,12 @@ class FireProvider extends observable_1.ObservableV2 {
         this.maxRTCWait = 100;
         this.maxFirestoreWait = 3000;
         this.firebaseDataLastUpdatedAt = new Date().getTime();
-        this.instanceConnection = new observable_1.ObservableV2();
+        this.instanceConnection = new ObservableV2();
         this.ready = false;
         this.init = () => __awaiter(this, void 0, void 0, function* () {
             this.trackData(); // initiate this before creating instance, so that users with read permissions can also view the document
             try {
-                const data = yield (0, utils_1.initiateInstance)(this.db, this.documentPath);
+                const data = yield initiateInstance(this.db, this.documentPath);
                 this.instanceConnection.on("closed", this.trackConnections);
                 this.uid = data.uid;
                 this.timeOffset = data.offset;
@@ -101,7 +75,7 @@ class FireProvider extends observable_1.ObservableV2 {
             // yjs document
             if (this.unsubscribeData)
                 this.unsubscribeData();
-            this.unsubscribeData = (0, firestore_1.onSnapshot)((0, firestore_1.doc)(this.db, this.documentPath), (doc) => {
+            this.unsubscribeData = onSnapshot(doc(this.db, this.documentPath), (doc) => {
                 if (doc.exists()) {
                     const data = doc.data();
                     if (data && data.content) {
@@ -128,12 +102,12 @@ class FireProvider extends observable_1.ObservableV2 {
         this.trackMesh = () => {
             if (this.unsubscribeMesh)
                 this.unsubscribeMesh();
-            this.unsubscribeMesh = (0, firestore_1.onSnapshot)((0, firestore_2.collection)(this.db, `${this.documentPath}/instances`), (snapshot) => {
+            this.unsubscribeMesh = onSnapshot(collection(this.db, `${this.documentPath}/instances`), (snapshot) => {
                 this.clients = [];
                 snapshot.forEach((doc) => {
                     this.clients.push(doc.id);
                 });
-                const mesh = (0, graph_1.createGraph)(this.clients);
+                const mesh = createGraph(this.clients);
                 // a -> b, c; a is the sender and b, c are receivers
                 const receivers = mesh[this.uid]; // this user's receivers
                 const senders = Object.keys(mesh).filter((v, i) => mesh[v] && mesh[v].length && mesh[v].includes(this.uid)); // this user's senders
@@ -176,7 +150,7 @@ class FireProvider extends observable_1.ObservableV2 {
             // 1. remove obselete peers
             // 2. add new peers
             // 3. no change to same peers
-            const getNewPeers = (0, utils_1.refreshPeers)(newPeers, oldPeers);
+            const getNewPeers = refreshPeers(newPeers, oldPeers);
             const peersType = isCaller ? "receivers" : "senders";
             if (!this.peersRTC[peersType])
                 this.peersRTC[peersType] = {};
@@ -196,7 +170,7 @@ class FireProvider extends observable_1.ObservableV2 {
                         yield this.peersRTC[peersType][peerUid].destroy();
                         delete this.peersRTC[peersType][peerUid];
                     }
-                    this.peersRTC[peersType][peerUid] = new webrtc_1.WebRtc({
+                    this.peersRTC[peersType][peerUid] = new WebRtc({
                         firebaseApp: this.firebaseApp,
                         ydoc: this.doc,
                         awareness: this.awareness,
@@ -233,8 +207,8 @@ class FireProvider extends observable_1.ObservableV2 {
         this.saveToFirestore = () => {
             try {
                 // current document to firestore
-                const ref = (0, firestore_1.doc)(this.db, this.documentPath);
-                (0, firestore_1.setDoc)(ref, { content: firestore_1.Bytes.fromUint8Array(Y.encodeStateAsUpdate(this.doc)) }, { merge: true });
+                const ref = doc(this.db, this.documentPath);
+                setDoc(ref, { content: Bytes.fromUint8Array(Y.encodeStateAsUpdate(this.doc)) }, { merge: true });
             }
             catch (error) {
                 this.consoleHandler("error saving to firestore", error);
@@ -342,7 +316,7 @@ class FireProvider extends observable_1.ObservableV2 {
                 clearTimeout(this.firestoreTimeout);
             this.doc.off("update", this.updateHandler);
             this.awareness.off("update", this.awarenessUpdateHandler);
-            (0, utils_1.deleteInstance)(this.db, this.documentPath, this.uid);
+            deleteInstance(this.db, this.documentPath, this.uid);
             if (this.unsubscribeData && !keepReadOnly) {
                 this.unsubscribeData();
                 delete this.unsubscribeData;
@@ -364,7 +338,7 @@ class FireProvider extends observable_1.ObservableV2 {
         };
         // Initializing values
         this.firebaseApp = firebaseApp;
-        this.db = (0, firestore_1.getFirestore)(this.firebaseApp);
+        this.db = getFirestore(this.firebaseApp);
         this.doc = ydoc;
         this.documentPath = path;
         if (maxUpdatesThreshold)
@@ -381,4 +355,3 @@ class FireProvider extends observable_1.ObservableV2 {
         };
     }
 }
-exports.FireProvider = FireProvider;

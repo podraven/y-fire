@@ -1,27 +1,3 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -31,18 +7,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.WebRtc = void 0;
-const Y = __importStar(require("yjs"));
-const awarenessProtocol = __importStar(require("y-protocols/awareness"));
-const firestore_1 = require("@firebase/firestore");
-const observable_1 = require("lib0/observable");
-const simple_peer_light_1 = __importDefault(require("simple-peer-light"));
-const utils_1 = require("./utils");
-class WebRtc extends observable_1.ObservableV2 {
+import * as Y from "yjs";
+import * as awarenessProtocol from "y-protocols/awareness";
+import { getFirestore, doc, onSnapshot, setDoc, deleteDoc, } from "@firebase/firestore";
+import { ObservableV2 } from "lib0/observable";
+import SimplePeer from "simple-peer-light";
+import { Uint8ArrayToBase64, base64ToUint8Array, decryptData, encryptData, generateKey, killZombie, } from "./utils";
+export class WebRtc extends ObservableV2 {
     constructor({ firebaseApp, ydoc, awareness, instanceConnection, documentPath, uid, peerUid, isCaller = false, }) {
         super();
         this.ice = {
@@ -77,20 +48,20 @@ class WebRtc extends observable_1.ObservableV2 {
                 clearTimeout(this.clock);
             this.clock = setTimeout(() => {
                 if (this.connection !== "connected") {
-                    (0, utils_1.killZombie)(this.db, this.documentPath, this.uid, this.peerUid);
+                    killZombie(this.db, this.documentPath, this.uid, this.peerUid);
                     if (this.peer)
                         this.peer.destroy();
                 }
             }, 30 * 1000);
         };
         this.createKey = () => __awaiter(this, void 0, void 0, function* () {
-            this.peerKey = yield (0, utils_1.generateKey)(this.isCaller ? this.uid : this.peerUid, this.isCaller ? this.peerUid : this.uid);
+            this.peerKey = yield generateKey(this.isCaller ? this.uid : this.peerUid, this.isCaller ? this.peerUid : this.uid);
             // this.consoleHandler("key", this.peerKey);
             if (!this.peerKey)
                 this.destroy();
         });
         this.callPeer = () => {
-            this.peer = new simple_peer_light_1.default({
+            this.peer = new SimplePeer({
                 initiator: true,
                 config: this.ice,
                 trickle: false,
@@ -102,10 +73,10 @@ class WebRtc extends observable_1.ObservableV2 {
                  */
                 // this.consoleHandler("Send call to peer");
                 try {
-                    const callRef = (0, firestore_1.doc)(this.db, `${this.documentPath}/instances/${this.peerUid}/calls`, this.uid);
-                    yield (0, firestore_1.setDoc)(callRef, { signal });
+                    const callRef = doc(this.db, `${this.documentPath}/instances/${this.peerUid}/calls`, this.uid);
+                    yield setDoc(callRef, { signal });
                     setTimeout(() => {
-                        (0, firestore_1.deleteDoc)(callRef);
+                        deleteDoc(callRef);
                     }, 30 * 1000); // delete call after 30 seconds, if handshake hasn't deleted it yet
                 }
                 catch (error) {
@@ -114,7 +85,7 @@ class WebRtc extends observable_1.ObservableV2 {
             }));
         };
         this.replyPeer = () => {
-            this.peer = new simple_peer_light_1.default({
+            this.peer = new SimplePeer({
                 initiator: false,
                 config: this.ice,
                 trickle: false,
@@ -125,10 +96,10 @@ class WebRtc extends observable_1.ObservableV2 {
                  */
                 // this.consoleHandler("Reply with answer");
                 try {
-                    const answerRef = (0, firestore_1.doc)(this.db, `${this.documentPath}/instances/${this.peerUid}/answers`, this.uid);
-                    yield (0, firestore_1.setDoc)(answerRef, { signal });
+                    const answerRef = doc(this.db, `${this.documentPath}/instances/${this.peerUid}/answers`, this.uid);
+                    yield setDoc(answerRef, { signal });
                     setTimeout(() => {
-                        (0, firestore_1.deleteDoc)(answerRef);
+                        deleteDoc(answerRef);
                     }, 30 * 1000); // delete call after 30 seconds, if handshake hasn't deleted it yet
                 }
                 catch (error) {
@@ -137,7 +108,7 @@ class WebRtc extends observable_1.ObservableV2 {
             }));
         };
         this.handshake = () => {
-            this.unsubscribeHandshake = (0, firestore_1.onSnapshot)((0, firestore_1.doc)(this.db, `${this.documentPath}/instances/${this.uid}/${this.isCaller ? "answers" : "calls"}/${this.peerUid}`), // track own uid not peerUid
+            this.unsubscribeHandshake = onSnapshot(doc(this.db, `${this.documentPath}/instances/${this.uid}/${this.isCaller ? "answers" : "calls"}/${this.peerUid}`), // track own uid not peerUid
             (doc) => {
                 const docData = doc.data();
                 if (docData) {
@@ -169,12 +140,12 @@ class WebRtc extends observable_1.ObservableV2 {
             try {
                 let ref;
                 if (this.isCaller) {
-                    ref = (0, firestore_1.doc)(this.db, `${this.documentPath}/instances/${this.peerUid}/calls`, this.uid);
+                    ref = doc(this.db, `${this.documentPath}/instances/${this.peerUid}/calls`, this.uid);
                 }
                 else {
-                    ref = (0, firestore_1.doc)(this.db, `${this.documentPath}/instances/${this.peerUid}/answers`, this.uid);
+                    ref = doc(this.db, `${this.documentPath}/instances/${this.peerUid}/answers`, this.uid);
                 }
-                (0, firestore_1.deleteDoc)(ref);
+                deleteDoc(ref);
             }
             catch (error) {
                 // this.consoleHandler("delete signals error", error);
@@ -197,18 +168,18 @@ class WebRtc extends observable_1.ObservableV2 {
             if (message)
                 msg.message = message;
             if (data) {
-                msg.data = yield (0, utils_1.Uint8ArrayToBase64)(data);
+                msg.data = yield Uint8ArrayToBase64(data);
             }
-            const encrypted = yield (0, utils_1.encryptData)(msg, this.peerKey);
+            const encrypted = yield encryptData(msg, this.peerKey);
             if (this.connection === "connected" && encrypted)
                 this.peer.send(encrypted);
         });
         this.handleReceivingData = (data) => __awaiter(this, void 0, void 0, function* () {
             try {
-                const decrypted = yield (0, utils_1.decryptData)(data, this.peerKey);
+                const decrypted = yield decryptData(data, this.peerKey);
                 if (decrypted) {
                     if (decrypted.data) {
-                        decrypted.data = yield (0, utils_1.base64ToUint8Array)(decrypted.data);
+                        decrypted.data = yield base64ToUint8Array(decrypted.data);
                     }
                     if (decrypted.message === "awareness" && decrypted.data) {
                         awarenessProtocol.applyAwarenessUpdate(this.awareness, decrypted.data, decrypted.uid);
@@ -235,7 +206,7 @@ class WebRtc extends observable_1.ObservableV2 {
         this.documentPath = documentPath;
         this.uid = uid;
         this.peerUid = peerUid;
-        this.db = (0, firestore_1.getFirestore)(firebaseApp);
+        this.db = getFirestore(firebaseApp);
         this.isCaller = isCaller;
         /**
          * Let's initiate this peer. The peer
@@ -260,4 +231,3 @@ class WebRtc extends observable_1.ObservableV2 {
         });
     }
 }
-exports.WebRtc = WebRtc;

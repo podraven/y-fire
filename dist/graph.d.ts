@@ -8,13 +8,7 @@
  * @param connections max number of connections
  * @returns
  */
-export const createGraph = (uids = [], connections = 3) => {
-    const ids = uids.sort();
-    const graph = {};
-    for (let i = 0; i < ids.length; i++) {
-        const nodes = ids.slice(connections * i + 1, connections * i + 1 + connections);
-        if (nodes.length)
-            graph[ids[i]] = nodes;
-    }
-    return graph;
+export declare const createGraph: (uids?: string[], connections?: number) => {
+    [index: string]: string[];
 };
+//# sourceMappingURL=graph.d.ts.map
