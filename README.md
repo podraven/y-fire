@@ -36,6 +36,8 @@ Once you have installed all the dependencies, you can install the `y-fire` libra
 npm install y-fire --save
 ```
 
+[![npm version](https://badge.fury.io/js/y-fire.svg)](https://npmjs.org/y-fire)
+
 # Usage
 
 ```
