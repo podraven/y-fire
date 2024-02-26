@@ -4,6 +4,9 @@ A database and connection provider for Yjs based on Firestore.
 
 y-fire is a Firestore (Firebase) and WebRTC-based provider, built especially for serverless infrastructure, that offers real-time capabilities to your Yjs-based applications. y-fire is built with efficiency in mind to reduce the number of calls that the application makes to and from Firestore. With y-fire, Firestore will act as both 1. persistent storage and 2. a peer discovery platform for WebRTC connections. This means that real-time updates are shared through a peer-to-peer network, thus reducing connections to Firestore. y-fire was inspired by [yjs-firestore-provider](https://github.com/gmcfall/yjs-firestore-provider) but implements few things differently.
 
+
+https://github.com/podraven/y-fire/assets/2324523/3aa27a40-6cfb-4b93-b043-4e0fa57c96d4
+
 # Features
 
 1. Utilizes a peer-to-peer network to exchange real-time data and awareness.
