@@ -87,9 +87,6 @@ export class FireProvider extends ObservableV2<any> {
   public onDeleted: () => void;
   public onSaving: (status: boolean) => void;
 
-  // private initiateHandler: () => void;
-  private destroyHandler: () => void;
-
   init = async () => {
     this.trackData(); // initiate this before creating instance, so that users with read permissions can also view the document
     try {
@@ -184,7 +181,7 @@ export class FireProvider extends ObservableV2<any> {
   reconnect = () => {
     if (this.recreateTimeout) clearTimeout(this.recreateTimeout);
     this.recreateTimeout = setTimeout(async () => {
-      this.consoleHandler("triggering reconnect");
+      this.consoleHandler("triggering reconnect", this.uid);
       this.destroy();
       this.init();
     }, 200);
@@ -459,9 +456,5 @@ export class FireProvider extends ObservableV2<any> {
 
     // Initialize the provider
     const init = this.init();
-
-    this.destroyHandler = () => {
-      this.destroy();
-    };
   }
 }
