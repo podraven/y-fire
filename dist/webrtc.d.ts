@@ -34,10 +34,21 @@ export declare class WebRtc extends ObservableV2<any> {
     peerKey: CryptoKey;
     connection: string;
     clock: string | number | NodeJS.Timeout;
+    idleThreshold: number;
     constructor({ firebaseApp, ydoc, awareness, instanceConnection, documentPath, uid, peerUid, isCaller, }: Parameters);
     initPeer: () => void;
     startInitClock: () => void;
     createKey: () => Promise<void>;
+    createPeer: (config: {
+        initiator: boolean;
+        config: {
+            iceServers: {
+                urls: string;
+            }[];
+        };
+        trickle: boolean;
+        channelName?: string;
+    }) => void;
     callPeer: () => void;
     replyPeer: () => void;
     handshake: () => void;

@@ -124,7 +124,8 @@ new FireProvider({
 
 #### Methods
 
-- **destroyHandler**: Destroys the y-fire instance. You may want to destroy the y-fire instance when navigating out of the page to avoid the initialization of duplicate instances. Use `provider.destroyHandler();` to destroy the instance.
+- **destroy**: Destroys the y-fire instance. You may want to destroy the y-fire instance when navigating out of the page to avoid the initialization of duplicate instances. Use `provider.destroy();` to destroy the instance.
+- ~~**destroyHandler**: Destroys the y-fire instance. You may want to destroy the y-fire instance when navigating out of the page to avoid the initialization of duplicate instances. Use `provider.destroyHandler();` to destroy the instance.~~ (Replaced with **destroy**)
 
 #### Events
 

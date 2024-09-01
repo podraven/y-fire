@@ -12,6 +12,7 @@ import { collection } from "firebase/firestore";
 import * as Y from "yjs";
 import { ObservableV2 } from "lib0/observable";
 import * as awarenessProtocol from "y-protocols/awareness";
+import { get as getLocal, set as setLocal, del as delLocal } from "idb-keyval";
 import { deleteInstance, initiateInstance, refreshPeers } from "./utils";
 import { WebRtc } from "./webrtc";
 import { createGraph } from "./graph";
@@ -61,6 +62,33 @@ export class FireProvider extends ObservableV2 {
                 this.kill(true); // destroy provider but keep the read-only stream alive
             }
         });
+        this.syncLocal = () => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const local = yield getLocal(this.documentPath);
+                if (local)
+                    Y.applyUpdate(this.doc, local, { key: "local-sync" });
+            }
+            catch (e) {
+                this.consoleHandler("get local error", e);
+            }
+        });
+        this.saveToLocal = () => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const currentDoc = Y.encodeStateAsUpdate(this.doc);
+                setLocal(this.documentPath, currentDoc);
+            }
+            catch (e) {
+                this.consoleHandler("set local error", e);
+            }
+        });
+        this.deleteLocal = () => __awaiter(this, void 0, void 0, function* () {
+            try {
+                delLocal(this.documentPath);
+            }
+            catch (e) {
+                this.consoleHandler("del local error", e);
+            }
+        });
         this.initiateHandler = () => {
             this.consoleHandler("FireProvider initiated!");
             this.awareness.on("update", this.awarenessUpdateHandler);
@@ -68,6 +96,7 @@ export class FireProvider extends ObservableV2 {
             // keep track of selected peers
             this.trackMesh();
             this.doc.on("update", this.updateHandler);
+            this.syncLocal(); // if there's any data in indexedDb, get and apply
         };
         this.trackData = () => {
             // Whenever there are changes to the firebase document
@@ -121,7 +150,7 @@ export class FireProvider extends ObservableV2 {
             if (this.recreateTimeout)
                 clearTimeout(this.recreateTimeout);
             this.recreateTimeout = setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                this.consoleHandler("triggering reconnect");
+                this.consoleHandler("triggering reconnect", this.uid);
                 this.destroy();
                 this.init();
             }), 200);
@@ -204,11 +233,12 @@ export class FireProvider extends ObservableV2 {
                 }
             }
         };
-        this.saveToFirestore = () => {
+        this.saveToFirestore = () => __awaiter(this, void 0, void 0, function* () {
             try {
                 // current document to firestore
                 const ref = doc(this.db, this.documentPath);
-                setDoc(ref, { content: Bytes.fromUint8Array(Y.encodeStateAsUpdate(this.doc)) }, { merge: true });
+                yield setDoc(ref, { content: Bytes.fromUint8Array(Y.encodeStateAsUpdate(this.doc)) }, { merge: true });
+                this.deleteLocal(); // We have successfully saved to Firestore, empty indexedDb for now
             }
             catch (error) {
                 this.consoleHandler("error saving to firestore", error);
@@ -217,7 +247,7 @@ export class FireProvider extends ObservableV2 {
                 if (this.onSaving)
                     this.onSaving(false);
             }
-        };
+        });
         this.sendToFirestoreQueue = () => {
             // if cache settles down, save document to firebase
             if (this.firestoreTimeout)
@@ -276,14 +306,25 @@ export class FireProvider extends ObservableV2 {
             }
         };
         this.updateHandler = (update, origin) => {
+            // Origin can be of the following types
+            // 1. User typed something -> origin: object
+            // 2. User loaded something from local store -> origin: object
+            // 3. User received update from a peer -> origin: string = peer uid
+            // 4. User received update from Firestore -> origin: string = 'origin:firebase/update'
+            // 5. Update triggered because user applied updates from the above sources -> origin: string = uid
             if (origin !== this.uid) {
-                // Only allow updates typed by the user, and updates sent by peers
-                // Disallow repeat updates that were sent back by the peers
+                // We will not allow no. 5. to propagate any further
+                // Apply updates received from no. 1 to 4. -> triggers no. 5
                 Y.applyUpdate(this.doc, update, this.uid); // the third parameter sets the transaction-origin
+                // Convert no. 1 and 2 to uid, because we want these to eventually trigger 'save' to Firestore
+                // sendToQueue method will either:
+                // 1. save origin:uid to Firestore (and send to peers through WebRtc)
+                // 2. send updates from other origins through WebRtc only
                 this.sendToQueue({
                     from: typeof origin === "string" ? origin : this.uid,
                     update,
                 });
+                this.saveToLocal(); // save data to local indexedDb
             }
         };
         this.awarenessUpdateHandler = ({ added, updated, removed, }, origin) => {
@@ -350,8 +391,5 @@ export class FireProvider extends ObservableV2 {
         this.awareness = new awarenessProtocol.Awareness(this.doc);
         // Initialize the provider
         const init = this.init();
-        this.destroyHandler = () => {
-            this.destroy();
-        };
     }
 }
