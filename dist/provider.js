@@ -121,7 +121,7 @@ export class FireProvider extends ObservableV2 {
             if (this.recreateTimeout)
                 clearTimeout(this.recreateTimeout);
             this.recreateTimeout = setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                this.consoleHandler("triggering reconnect");
+                this.consoleHandler("triggering reconnect", this.uid);
                 this.destroy();
                 this.init();
             }), 200);
@@ -350,8 +350,5 @@ export class FireProvider extends ObservableV2 {
         this.awareness = new awarenessProtocol.Awareness(this.doc);
         // Initialize the provider
         const init = this.init();
-        this.destroyHandler = () => {
-            this.destroy();
-        };
     }
 }

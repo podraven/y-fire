@@ -60,7 +60,6 @@ export declare class FireProvider extends ObservableV2<any> {
     onReady: () => void;
     onDeleted: () => void;
     onSaving: (status: boolean) => void;
-    private destroyHandler;
     init: () => Promise<void>;
     initiateHandler: () => void;
     trackData: () => void;

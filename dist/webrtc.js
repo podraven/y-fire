@@ -23,6 +23,7 @@ export class WebRtc extends ObservableV2 {
             ],
         };
         this.connection = "connecting";
+        this.idleThreshold = 20000;
         this.initPeer = () => {
             this.createKey();
             if (this.isCaller) {
@@ -40,7 +41,7 @@ export class WebRtc extends ObservableV2 {
         this.startInitClock = () => {
             /**
              * We will track how long it takes to connect to this peer
-             * if it takes longer than 30s, we assume that we are
+             * if it takes longer than idleThreshold, we assume that we are
              * connected to a zombie peer. Thus we will attempt to
              * kill the zombie instance
              */
@@ -49,10 +50,9 @@ export class WebRtc extends ObservableV2 {
             this.clock = setTimeout(() => {
                 if (this.connection !== "connected") {
                     killZombie(this.db, this.documentPath, this.uid, this.peerUid);
-                    if (this.peer)
-                        this.peer.destroy();
+                    this.handleOnClose();
                 }
-            }, 30 * 1000);
+            }, this.idleThreshold);
         };
         this.createKey = () => __awaiter(this, void 0, void 0, function* () {
             this.peerKey = yield generateKey(this.isCaller ? this.uid : this.peerUid, this.isCaller ? this.peerUid : this.uid);
@@ -60,8 +60,11 @@ export class WebRtc extends ObservableV2 {
             if (!this.peerKey)
                 this.destroy();
         });
+        this.createPeer = (config) => {
+            this.peer = new SimplePeer(config);
+        };
         this.callPeer = () => {
-            this.peer = new SimplePeer({
+            this.createPeer({
                 initiator: true,
                 config: this.ice,
                 trickle: false,
@@ -77,7 +80,7 @@ export class WebRtc extends ObservableV2 {
                     yield setDoc(callRef, { signal });
                     setTimeout(() => {
                         deleteDoc(callRef);
-                    }, 30 * 1000); // delete call after 30 seconds, if handshake hasn't deleted it yet
+                    }, this.idleThreshold); // delete call after defined miliseconds, if handshake hasn't deleted it yet
                 }
                 catch (error) {
                     this.errorHandler(error);
@@ -85,7 +88,7 @@ export class WebRtc extends ObservableV2 {
             }));
         };
         this.replyPeer = () => {
-            this.peer = new SimplePeer({
+            this.createPeer({
                 initiator: false,
                 config: this.ice,
                 trickle: false,
@@ -100,7 +103,7 @@ export class WebRtc extends ObservableV2 {
                     yield setDoc(answerRef, { signal });
                     setTimeout(() => {
                         deleteDoc(answerRef);
-                    }, 30 * 1000); // delete call after 30 seconds, if handshake hasn't deleted it yet
+                    }, this.idleThreshold); // delete call after defined miliseconds, if handshake hasn't deleted it yet
                 }
                 catch (error) {
                     this.errorHandler(error);
