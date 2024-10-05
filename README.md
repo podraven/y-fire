@@ -129,10 +129,10 @@ new FireProvider({
   firebaseApp,
   ydoc,
   path: "username/tasks/taskuid",
-    docMapper: (bytes) => ({
-      title: "Custom title",
-      file: { filename: "file.docx", content: bytes },  // "bytes" contains your yjs data
-    }),
+  docMapper: (bytes) => ({
+    title: "Custom title",
+    file: { filename: "file.docx", content: bytes },  // "bytes" contains your yjs data
+  }),
 });
 ```
 
