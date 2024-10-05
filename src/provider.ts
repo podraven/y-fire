@@ -21,6 +21,7 @@ export interface Parameters {
   firebaseApp: FirebaseApp;
   ydoc: Y.Doc;
   path: string;
+  docMapper?: (bytes: Bytes) => object;
   maxUpdatesThreshold?: number;
   maxWaitTime?: number;
   maxWaitFirestoreTime?: number;
@@ -62,6 +63,8 @@ export class FireProvider extends ObservableV2<any> {
     receivers: {},
     senders: {},
   };
+
+  documentMapper: (bytes: Bytes) => object = (bytes) => ({ content: bytes });
 
   cache: Uint8Array | null;
   maxCacheUpdates: number = 20;
@@ -310,7 +313,9 @@ export class FireProvider extends ObservableV2<any> {
       const ref = doc(this.db, this.documentPath);
       await setDoc(
         ref,
-        { content: Bytes.fromUint8Array(Y.encodeStateAsUpdate(this.doc)) },
+        this.documentMapper(
+          Bytes.fromUint8Array(Y.encodeStateAsUpdate(this.doc))
+        ),
         { merge: true }
       );
       this.deleteLocal(); // We have successfully saved to Firestore, empty indexedDb for now
@@ -481,6 +486,7 @@ export class FireProvider extends ObservableV2<any> {
     firebaseApp,
     ydoc,
     path,
+    docMapper,
     maxUpdatesThreshold,
     maxWaitTime,
     maxWaitFirestoreTime,
@@ -492,6 +498,7 @@ export class FireProvider extends ObservableV2<any> {
     this.db = getFirestore(this.firebaseApp);
     this.doc = ydoc;
     this.documentPath = path;
+    if (docMapper) this.documentMapper = docMapper;
     if (maxUpdatesThreshold) this.maxCacheUpdates = maxUpdatesThreshold;
     if (maxWaitTime) this.maxRTCWait = maxWaitTime;
     if (maxWaitFirestoreTime) this.maxFirestoreWait = maxWaitFirestoreTime;
