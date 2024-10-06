@@ -4,7 +4,6 @@ A database and connection provider for Yjs based on Firestore.
 
 y-fire is a Firestore (Firebase) and WebRTC-based provider, built especially for serverless infrastructure, that offers real-time capabilities to your Yjs-based applications. y-fire is built with efficiency in mind to reduce the number of calls that the application makes to and from Firestore. With y-fire, Firestore will act as both 1. persistent storage and 2. a peer discovery platform for WebRTC connections. This means that real-time updates are shared through a peer-to-peer network, thus reducing connections to Firestore. y-fire was inspired by [yjs-firestore-provider](https://github.com/gmcfall/yjs-firestore-provider) but implements few things differently.
 
-
 https://github.com/podraven/y-fire/assets/2324523/3aa27a40-6cfb-4b93-b043-4e0fa57c96d4
 
 # Features
@@ -105,6 +104,7 @@ You need to grant **read and write** permissions to the document `/path/to/your/
 - **firebaseApp**: FirebaseApp (required)
 - **ydoc**: Y.Doc (required)
 - **path**: path to your **document** (required) ex. users/username/tasks/task-1
+- **docMapper**: Custom structure for your document (saves to the `content` field by default)
 - **maxUpdatesThreshold**: Number of updates before triggering real-time data share, defaults to 20
 - **maxWaitTime**: Time in milliseconds before triggering real-time data share, defaults to 100
 - **maxWaitFirestoreTime**: Time in milliseconds before triggering persistent data sync to Firestore, defaults to 3000
@@ -119,6 +119,20 @@ new FireProvider({
   maxUpdatesThreshold: 10,
   maxWaitTime: 90,
   maxWaitFirestoreTime: 500
+});
+```
+
+docMapper example with custom document structure
+
+```
+new FireProvider({
+  firebaseApp,
+  ydoc,
+  path: "username/tasks/taskuid",
+  docMapper: (bytes) => ({
+    title: "Custom title",
+    file: { filename: "file.docx", content: bytes },  // "bytes" contains your yjs data
+  }),
 });
 ```
 
