@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { FirebaseApp } from "@firebase/app";
-import { Firestore } from "@firebase/firestore";
+import { Firestore, Bytes } from "@firebase/firestore";
 import * as Y from "yjs";
 import { ObservableV2 } from "lib0/observable";
 import * as awarenessProtocol from "y-protocols/awareness";
@@ -9,6 +9,7 @@ export interface Parameters {
     firebaseApp: FirebaseApp;
     ydoc: Y.Doc;
     path: string;
+    docMapper?: (bytes: Bytes) => object;
     maxUpdatesThreshold?: number;
     maxWaitTime?: number;
     maxWaitFirestoreTime?: number;
@@ -43,6 +44,7 @@ export declare class FireProvider extends ObservableV2<any> {
     peersReceivers: Set<string>;
     peersSenders: Set<string>;
     peersRTC: PeersRTC;
+    documentMapper: (bytes: Bytes) => object;
     cache: Uint8Array | null;
     maxCacheUpdates: number;
     cacheUpdateCount: number;
@@ -91,7 +93,7 @@ export declare class FireProvider extends ObservableV2<any> {
     consoleHandler: (message: any, data?: any) => void;
     destroy: () => void;
     kill: (keepReadOnly?: boolean) => void;
-    constructor({ firebaseApp, ydoc, path, maxUpdatesThreshold, maxWaitTime, maxWaitFirestoreTime, }: Parameters);
+    constructor({ firebaseApp, ydoc, path, docMapper, maxUpdatesThreshold, maxWaitTime, maxWaitFirestoreTime, }: Parameters);
 }
 export {};
 //# sourceMappingURL=provider.d.ts.map
