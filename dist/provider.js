@@ -30,7 +30,7 @@ export class FireProvider extends ObservableV2 {
     get clientTimeOffset() {
         return this.timeOffset;
     }
-    constructor({ firebaseApp, ydoc, path, maxUpdatesThreshold, maxWaitTime, maxWaitFirestoreTime, }) {
+    constructor({ firebaseApp, ydoc, path, docMapper, maxUpdatesThreshold, maxWaitTime, maxWaitFirestoreTime, }) {
         super();
         this.timeOffset = 0; // offset to server time in mili seconds
         this.clients = [];
@@ -40,6 +40,7 @@ export class FireProvider extends ObservableV2 {
             receivers: {},
             senders: {},
         };
+        this.documentMapper = (bytes) => ({ content: bytes });
         this.maxCacheUpdates = 20;
         this.cacheUpdateCount = 0;
         this.maxRTCWait = 100;
@@ -237,7 +238,7 @@ export class FireProvider extends ObservableV2 {
             try {
                 // current document to firestore
                 const ref = doc(this.db, this.documentPath);
-                yield setDoc(ref, { content: Bytes.fromUint8Array(Y.encodeStateAsUpdate(this.doc)) }, { merge: true });
+                yield setDoc(ref, this.documentMapper(Bytes.fromUint8Array(Y.encodeStateAsUpdate(this.doc))), { merge: true });
                 this.deleteLocal(); // We have successfully saved to Firestore, empty indexedDb for now
             }
             catch (error) {
@@ -382,6 +383,8 @@ export class FireProvider extends ObservableV2 {
         this.db = getFirestore(this.firebaseApp);
         this.doc = ydoc;
         this.documentPath = path;
+        if (docMapper)
+            this.documentMapper = docMapper;
         if (maxUpdatesThreshold)
             this.maxCacheUpdates = maxUpdatesThreshold;
         if (maxWaitTime)
